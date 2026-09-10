@@ -1,103 +1,172 @@
+# 🛡️ Malicious URL Detection & REST API
 
-# Zararlı URL Tespiti 
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![TensorFlow / Keras](https://img.shields.io/badge/TensorFlow-Keras-orange.svg?logo=tensorflow&logoColor=white)](https://www.tensorflow.org/)
+[![Flask](https://img.shields.io/badge/Flask-API-lightgrey.svg?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458.svg?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-### _Proje Amacı: Bir URL'nin oltalama olup olmadığını tespit ederek ilk kullanıcının doğru kaynaklara yönlendirilmesini sağlamak._
+Zararlı, oltalama (phishing) ve şüpheli bağlantıları tespit etmek amacıyla geliştirilmiş Makine Öğrenmesi / Derin Öğrenme tabanlı **Zararlı URL Tespit Sistemi**. Bu proje; veri ön işleme, model eğitimi, model test adımları ve eğitilen modelin gerçek zamanlı olarak sorgulanabileceği bir **Flask RESTful API** servisinden oluşur.
 
- *"Bu projede Python yazılım dili kullanıldı."*
+---
 
-*Proje Akışı:*
-1. USOM'un web sitesinde yayımladığı "Zararlı Bağlantılar" isimli API'lerden "Banking Phishing" urllerini çekmek. (Ya da elinde var olan veri setini kullanmak.)
-2. URL'leri düzenlemek ve etiketleyerek eğitime hazır dataset haline getirmek.
-3. Machine Learning için bir model oluşturmak.
-4. Oluşturduğun modeli eğitmek için Python betiği oluşturmak.
-5. Flask ile API kurmak.
+## 📌 İçindekiler
 
-----------------------------------------
+- [Genel Bakış](#-genel-bakış)
+- [Özellikler](#-özellikler)
+- [Proje Mimarisi & Dosya Yapısı](#-proje-mimarisi--dosya-yapısı)
+- [Kurulum](#-kurulum)
+- [Kullanım Adımları](#-kullanım-adımları)
+  - [1. Veri Hazırlama & Ön İşleme](#1-veri-hazırlama--ön-işleme)
+  - [2. Model Eğitimi](#2-model-eğitimi)
+  - [3. Model Testi](#3-model-testi)
+  - [4. REST API Sunucusunu Başlatma](#4-rest-api-sunucusunu-başlatma)
+- [API Uç Noktaları](#-api-uç-noktaları)
+- [Kullanılan Teknolojiler](#-kullanılan-teknolojiler)
+- [Katkıda Bulunma](#-katkıda-bulunma)
+- [Lisans](#-lisans)
 
-<--> Elindeki dataset etiketleme işlemi için "label.py" dosyasını kullanarak "banking_phishing.txt" adında bir .txt dosyası oluşturuyoruz. Aşağıdaki kod bloğundan da ilgili scripte ulaşabilirsin. 
+---
 
+## 📖 Genel Bakış
+
+Siber güvenlikte kullanıcıları tehdit eden en yaygın vektörlerden biri kötü amaçlı bağlantılardır. Bu proje:
+- Güvenli ve zararlı URL'leri etiketlenmiş veri setleri (`mix_labels.csv`) üzerinden analiz eder.
+- Metin işleme / öznitelik çıkarımı yöntemlerini kullanarak Keras/TensorFlow tabanlı bir sınıflandırma modeli (`new_model.keras`) eğitir.
+- Eğitilen modeli harici uygulamalara, tarayıcı eklentilerine veya güvenlik duvarlarına entegre edilebilmesi için hafif bir **Flask REST API** üzerinden servis eder.
+
+---
+
+## ✨ Özellikler
+
+- **Veri Manipülasyonu & Analiz:** `pandas` ile veri setini temizleme, sınıfları dengeleme ve etiketleme.
+- **Derin Öğrenme / ML Modeli:** Yüksek doğrulukla zararlı ve güvenli URL'leri ayırt edebilen Keras tabanlı derin öğrenme mimarisi.
+- **RESTful Entegrasyon:** Gerçek zamanlı URL denetimi sağlayan Flask API.
+- **Test ve Doğrulama:** Test komut dosyası ile model başarımını ve örnek URL tahminlerini hızla değerlendirebilme imkânı.
+
+---
+
+## 📂 Proje Mimarisi & Dosya Yapısı
+
+```text
+malicious_url/
+├── mix_labels.csv        # Etiketlenmiş eğitim ve test veri seti (URL & Label)
+├── pandas_framework.py   # Veri analizi, temizleme ve veri çerçevesi işlemleri
+├── label.py              # URL etiketleme ve veri dönüşüm fonksiyonları
+├── machine_learning.py   # Model mimarisi tanımlama, derleme ve eğitim (Training)
+├── new_model.keras       # Eğitilmiş ve serileştirilmiş Keras modeli
+├── test_model.py         # Eğitilen modelin metrik ve örnek URL testleri
+├── f_restapi.py          # Tahmin isteklerini karşılayan Flask REST API servisi
+└── README.md             # Proje dokümantasyonu
 ```
-with open('phishing.txt', 'r') as file: #dataset .txt olarak kayıtlı olduğu için belgenin açılması ve satır satır okunması gerekiyor.
-    urls = file.readlines()
 
-etiketli_veriler = [f"{url.strip()} ,phishing\n" for url in urls] #Etiketleme yapıp bunu diziye kaydet.
+---
 
-#Dikkat! Eğer veri setinin satırları temizlenmediyse önce bunu kullan:
-#cleaned_data = [line.strip() for line in data if line.strip() != '']
+## 🚀 Kurulum
 
-with open('banking_phishing.txt', 'w') as file: #Hazırlanan verileri yeni bir .txt'ye kaydet.
-    file.writelines(etiketli_veriler)
+Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları takip edin:
 
+### 1. Depoyu Klonlayın
+```bash
+git clone [https://github.com/beyza-ozben/malicious_url.git](https://github.com/beyza-ozben/malicious_url.git)
+cd malicious_url
 ```
 
-<--> Pandas kütüphanesi kullandığımız için ".csv" uzantılı datasete ihtiyaç var. Bunun için elimizdeki .txt uzantılı dataseti "pandas_framework.py" ile .csv dosyasına dönüştürüyoruz. İlgili python bloğuyla verileri çekip şununla:
+### 2. Sanal Ortam Oluşturun ve Aktif Edin (Önerilen)
+```bash
+# Sanal ortam oluşturma
+python3 -m venv venv
 
+# Linux / macOS:
+source venv/bin/activate
+
+# Windows:
+venv\Scripts\activate
 ```
-# DataFrame'i .csv dosyasına kaydet
-data.to_csv('mix_labels.csv', index=False)
+
+### 3. Bağımlılıkları Yükleyin
+```bash
+pip install --upgrade pip
+pip install tensorflow keras pandas flask scikit-learn numpy
 ```
-dosyanı kaydettirmiş olacaksın.
 
-#### <--> Şimdi sıra geldi modeli oluşturmaya! 
-    
-<-----> _"machine_learning.py"_ dosyasındaki kod bloğu ile eğiteceğin modele dair bilgileri düzenleyerek ekle ve eğittin modelin adı ne olsun istiyorsan _"model.save('my_model.keras')"_ satırında 'my_model.keras' kısmına kendi isimlendirmeni yaz!
-    
->![Image-1](https://github.com/user-attachments/assets/10c1a52a-e1e4-4c3c-b146-36174082443d)
-    
-#### !!Dikkat!! ".csv dosyandaki etiketlemen nasılsa tam olarak öyle yazmalısın, eğer (space) varsa öyle yazdığından emin ol."
+---
 
-#### <--> Ve son aşama modelini test etmek! 
+## 🛠️ Kullanım Adımları
 
----> "test_model.py" dosyasındaki kod bloğunu localdeki bilgilerine göre güncelleyerek ve "test_domain = '....' " kısmına denemek istediğin URL'yi girerek modelini test edebilirsin. (Bu noktada space olduğuna dikkat et!)
-
->![Image-2](https://github.com/user-attachments/assets/599a1492-a191-432f-9ebb-43d9bbe72f73)
-
-(Modelin cevabı 0-1 arasında bir double değer olacak.)
-
-### Tebrikler!! Model başarıyla eğitildi!
-
->![Image-3](https://github.com/user-attachments/assets/8249171b-aa27-4611-a1c5-eb01d955dba5)
-
-----------------------------------------
-
----> Modelin çalıştığından da emin olduğumuza göre şimdi API kurarak localden istek atmayı sağlayalım!
-
----> Bunun için önce Flask ile bir rest ayarlayacaksın, bu noktada "f_restapi.py" scripti seni yönlendirecek.
+### 1. Veri Hazırlama & Ön İşleme
+Veri setini (`mix_labels.csv`) incelemek, temizlemek ve model için hazır hale getirmek için:
+```bash
+python pandas_framework.py
 ```
-model = keras.models.load_model('new_model.keras') #Modeline yaptığın isimlendirmeye göre ('...') kısmına belgenin adını yaz.
-...
-data = pd.read_csv('mix_labels.csv') #Datasetin bulunduğu .csv dosyasının adını kişisel olarak değiştebilirsin.
+
+### 2. Model Eğitimi
+Yeni bir model eğitmek ve ağırlıkları `new_model.keras` olarak kaydetmek için:
+```bash
+python machine_learning.py
 ```
-----------------------------------------
 
-Dosyada gerekli düzenlemeleri yaptıktan sonra:
-
->1. Datasetinin bulunduğu .csv
->2. Eğitilmiş modelin bulunduğu .keras
->3. Flask ile yazdığımız API f_restapi.py 
-
-... bu üç dosyanın aynı çalışma dizininde olduğundan emin ol! (Aynı dizinde olmazsa hata alırsın)
-
-<---> Şimdi de API'yi çalıştırıp *(C:\Users\BEYZANUR\url-detection\case> python f_restapi.py)* curl ile istek atacağız.
-
-Python scriptini çalıştırınca böyle bir çıktı alacaksın:
-
-![image-4](https://github.com/user-attachments/assets/e44a5121-e1fa-474c-8342-a7ee5217c518)
-
-Terminal & CMD çalışır durumdayken bir tane daha aç ve bulunduğun aynı dizine gir. Ardından,
+### 3. Model Testi
+Eğitilen modelin doğruluğunu test etmek ve örnek linkler üzerindeki performansını görmek için:
+```bash
+python test_model.py
 ```
-curl -X POST http://127.0.0.1:5000/test -H "Content-Type: application/json" -d "{\"domain\":\"testedeceğinveri\"}"
-#API'ye ulaşabileceğimiz iki yöntemden birisi curl diğeri postman'dir. Burada biz curl ile POST atmayı kullandık.
+
+### 4. REST API Sunucusunu Başlatma
+Modeli HTTP üzerinden tahmin yapabilir hale getiren Flask sunucusunu ayağa kaldırmak için:
+```bash
+python f_restapi.py
 ```
-Komutunu çalıştırınca çıktın bu olacak: (vsCode IDE'sinde çalışma hatası alabilirsin, CMD(komut istemi) kullanmanı tavsiye ederim.)
+Sunucu varsayılan olarak `http://127.0.0.1:5000` adresinde çalışacaktır.
 
-![image-5](https://github.com/user-attachments/assets/fa517a27-9a5b-486b-8933-21c824c9aa06)
+---
 
-### <---> Projeni dockerize edip container haline getirerek her platformda çalışmasını sağlayabilirsin!
+## 🔌 API Uç Noktaları
 
--------------------------------------------
-###  -- Kaynakça --
+### URL Güvenlik Kontrolü
 
-1. [Zararlı URL dataları](https://www.usom.gov.tr/adres)
-2. [Temel RestAPI](https://medium.com/@ibrahimpuskullu44/flask-kullanarak-python-ile-temel-bir-restful-api-olu%C5%9Fturma-2817b5f1f929)
-3. [Örnek curl'ler](https://gist.github.com/subfuzion/08c5d85437d5d4f00e58)
+- **URL:** `/predict`
+- **Metot:** `POST`
+- **Headers:** `Content-Type: application/json`
+
+#### Örnek İstek (Request)
+```bash
+curl -X POST [http://127.0.0.1:5000/predict](http://127.0.0.1:5000/predict) \
+     -H "Content-Type: application/json" \
+     -d '{"url": "[http://suspicious-banking-login.com](http://suspicious-banking-login.com)"}'
+```
+
+#### Örnek Yanıt (Response)
+```json
+{
+  "url": "[http://suspicious-banking-login.com](http://suspicious-banking-login.com)",
+  "prediction": "Malicious",
+  "confidence": 0.962
+}
+```
+
+---
+
+## 💻 Kullanılan Teknolojiler
+
+- **Programlama Dili:** Python 3.x
+- **Derin Öğrenme / Makine Öğrenmesi:** TensorFlow, Keras, Scikit-learn
+- **Veri Analizi:** Pandas, NumPy
+- **API Servisi:** Flask
+
+---
+
+## 🤝 Katkıda Bulunma
+
+Katkı sağlamak isterseniz:
+1. Depoyu fork'layın (`Fork` butonu).
+2. Yeni bir özellik dalı oluşturun (`git checkout -b feature/YeniOzellik`).
+3. Değişikliklerinizi commit edin (`git commit -m 'Yeni bir özellik eklendi'`).
+4. Dalınızı uzak depoya gönderin (`git push origin feature/YeniOzellik`).
+5. Bir **Pull Request** açın.
+
+---
+
+## 📄 Lisans
+
+Bu proje [MIT Lisansı](LICENSE) kapsamında lisanslanmıştır. Detaylar için lisans dosyasına göz atabilirsiniz.
